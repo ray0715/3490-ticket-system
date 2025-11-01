@@ -2,18 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
-import io
-
-# 嘗試匯入 QR Code 與 PDF 功能，如果缺少套件就跳過
-try:
-    import qrcode
-except:
-    qrcode = None
-
-try:
-    from fpdf import FPDF
-except:
-    FPDF = None
 
 # -----------------------------
 # 檔案與初始設定
@@ -49,7 +37,7 @@ def save_config(limit, password):
 cfg = read_config()
 
 # -----------------------------
-# 側邊欄
+# 側邊欄選單
 # -----------------------------
 page = st.sidebar.selectbox("選擇頁面", ["前台報名", "後台管理", "目前報名清單", "查詢報名資料"])
 
@@ -94,40 +82,6 @@ if page == "前台報名":
                     st.success(f"報名成功！您的序號是：{serial}")
                     st.balloons()
 
-                    # QR Code
-                    if qrcode:
-                        qr_info = f"姓名: {name}\n序號: {serial}\n報名時間: {now}"
-                        qr_img = qrcode.make(qr_info)
-                        st.image(qr_img, caption="您的報名 QR Code", use_column_width=True)
-                    else:
-                        st.info("若要 QR Code 功能，請安裝 qrcode 套件")
-
-                    # PDF
-                    if FPDF:
-                        pdf = FPDF()
-                        pdf.add_page()
-                        pdf.set_font("Arial", size=12)
-                        pdf.cell(0, 10, "3490第36屆年會報名資料", ln=1, align="C")
-                        pdf.ln(10)
-                        pdf.cell(0, 10, f"姓名: {name}", ln=1)
-                        pdf.cell(0, 10, f"Email: {email}", ln=1)
-                        pdf.cell(0, 10, f"電話: {phone}", ln=1)
-                        pdf.cell(0, 10, f"序號: {serial}", ln=1)
-                        pdf.cell(0, 10, f"報名時間: {now}", ln=1)
-
-                        pdf_buffer = io.BytesIO()
-                        pdf.output(pdf_buffer)
-                        pdf_buffer.seek(0)
-
-                        st.download_button(
-                            "下載 PDF 報名資料",
-                            pdf_buffer,
-                            f"{name}_signup.pdf",
-                            "application/pdf"
-                        )
-                    else:
-                        st.info("若要 PDF 功能，請安裝 fpdf 套件")
-
 # -----------------------------
 # 後台管理
 # -----------------------------
@@ -166,4 +120,15 @@ elif page == "目前報名清單":
 
 # -----------------------------
 # 查詢報名資料
-# ------------------------
+# -----------------------------
+elif page == "查詢報名資料":
+    st.title("🔎 查詢報名資料")
+    query_email = st.text_input("請輸入您的 Email 查詢")
+    if st.button("查詢"):
+        df = pd.read_csv(DATA_FILE)
+        result = df[df["Email"] == query_email]
+        if not result.empty:
+            st.success("查詢成功！")
+            st.dataframe(result)
+        else:
+            st.warning("查無資料")
