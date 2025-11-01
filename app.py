@@ -2,40 +2,6 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
-import requests
-import base64
-
-# -----------------------------
-# GitHub 設定
-# -----------------------------
-GITHUB_OWNER = "你的GitHub帳號"
-GITHUB_REPO = "你的repo名稱"
-GITHUB_FILE_PATH = "signup_data.csv"  # 在 GitHub 上的路徑
-GITHUB_TOKEN = "你的Personal Access Token"
-
-def push_csv_to_github(local_file, commit_message):
-    """將本地 CSV 推到 GitHub"""
-    with open(local_file, "r", encoding="utf-8") as f:
-        content = f.read()
-    url_get = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
-    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-    # 取得 SHA
-    r = requests.get(url_get, headers=headers)
-    if r.status_code == 200:
-        sha = r.json()["sha"]
-    else:
-        sha = None
-    data = {
-        "message": commit_message,
-        "content": base64.b64encode(content.encode()).decode()
-    }
-    if sha:
-        data["sha"] = sha
-    r = requests.put(url_get, headers=headers, json=data)
-    if r.status_code in [200, 201]:
-        st.success("CSV 已自動更新到 GitHub")
-    else:
-        st.error(f"推送 GitHub 失敗: {r.text}")
 
 # -----------------------------
 # 檔案與初始設定
@@ -43,25 +9,29 @@ def push_csv_to_github(local_file, commit_message):
 DATA_FILE = "signup_data.csv"
 CONFIG_FILE = "config.txt"
 
+# 建立 CSV，如果不存在
 if not os.path.exists(DATA_FILE):
     pd.DataFrame(columns=["姓名","Email","電話","序號","報名時間"]).to_csv(DATA_FILE,index=False)
 
+# 建立設定檔，如果不存在
 if not os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, "w") as f:
         f.write("limit=5\npassword=123456")
 
+# 讀取設定
 def read_config():
     cfg = {"limit": 5, "password": "123456"}
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE) as f:
             for line in f:
-                k, v = line.strip().split("=")
+                k,v = line.strip().split("=")
                 if k == "limit":
                     cfg[k] = int(v)
                 else:
                     cfg[k] = v
     return cfg
 
+# 儲存設定
 def save_config(limit, password):
     with open(CONFIG_FILE, "w") as f:
         f.write(f"limit={limit}\npassword={password}")
@@ -90,6 +60,7 @@ if page == "前台報名":
     st.title("3490地區扶青社第36屆年會報名系統")
     df = pd.read_csv(DATA_FILE)
     count = len(df)
+
     if count >= cfg["limit"]:
         st.warning("報名已額滿！")
     else:
@@ -105,13 +76,13 @@ if page == "前台報名":
                 else:
                     serial = f"{count+1:03d}"
                     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    new_row = pd.DataFrame([[name,email,phone,serial,now]],columns=df.columns)
+                    # 建立新列，避免 df.columns 不一致問題
+                    new_row = pd.DataFrame([[name,email,phone,serial,now]],
+                                           columns=["姓名","Email","電話","序號","報名時間"])
                     df = pd.concat([df,new_row],ignore_index=True)
                     df.to_csv(DATA_FILE,index=False)
                     st.success(f"報名成功！您的序號是：{serial}")
                     st.balloons()
-                    # 自動推到 GitHub
-                    push_csv_to_github(DATA_FILE, f"新增報名: {name} 序號 {serial}")
 
 # -----------------------------
 # 後台管理
@@ -126,6 +97,7 @@ elif page == "後台管理":
         st.dataframe(df)
         csv = df.to_csv(index=False).encode("utf-8")
         st.download_button("下載報名資料 (CSV)", csv, "signup_data.csv", "text/csv")
+
         st.subheader("設定報名限制與後台密碼")
         new_limit = st.number_input("報名上限", value=cfg["limit"], min_value=1,max_value=999)
         new_pwd = st.text_input("修改後台密碼（可留空不改）")
@@ -141,7 +113,8 @@ elif page == "後台管理":
 elif page == "目前報名清單":
     st.title("📋 目前報名清單")
     df = pd.read_csv(DATA_FILE)
-    df["報名時間"] = pd.to_datetime(df["報名時間"])
+    # 將報名時間轉 datetime，如果格式錯誤或空值就用 NaT
+    df["報名時間"] = pd.to_datetime(df["報名時間"], errors="coerce")
     st.dataframe(df)
 
 # -----------------------------
