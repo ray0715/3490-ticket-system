@@ -1,6 +1,11 @@
 import streamlit as st
 import pandas as pd
 import os
+from datetime import datetime
+import io
+from PIL import Image
+import qrcode
+from fpdf import FPDF
 
 # -----------------------------
 # 檔案與初始設定
@@ -8,11 +13,11 @@ import os
 DATA_FILE = "signup_data.csv"
 CONFIG_FILE = "config.txt"
 
-# 如果資料檔不存在，建立空 CSV
+# 建立資料檔
 if not os.path.exists(DATA_FILE):
-    pd.DataFrame(columns=["姓名", "Email", "電話", "序號"]).to_csv(DATA_FILE, index=False)
+    pd.DataFrame(columns=["姓名", "Email", "電話", "序號", "報名時間"]).to_csv(DATA_FILE, index=False)
 
-# 如果設定檔不存在，建立預設設定
+# 建立設定檔
 if not os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, "w") as f:
         f.write("limit=5\npassword=123456")
@@ -41,7 +46,17 @@ cfg = read_config()
 # -----------------------------
 # 側邊欄選單
 # -----------------------------
-page = st.sidebar.selectbox("選擇頁面", ["前台報名", "後台管理"])
+page = st.sidebar.selectbox("選擇頁面", ["前台報名", "後台管理", "目前報名清單", "查詢報名資料"])
+
+# -----------------------------
+# 活動資訊（最上方）
+# -----------------------------
+st.markdown("### 活動資訊")
+st.markdown("""
+**活動時間：** 2025/05/03(六)-05/04(日) 13:00 註冊聯誼  
+**活動地點：** 群策翡翠灣溫泉飯店 (新北市萬里區海景路一號)  
+**活動費用：** 3490地區扶青社員: 3600 元
+""")
 
 # -----------------------------
 # 前台報名頁
@@ -68,11 +83,44 @@ if page == "前台報名":
                     st.error("請填寫完整資料")
                 else:
                     serial = f"{count + 1:03d}"
-                    new_row = pd.DataFrame([[name, email, phone, serial]], columns=df.columns)
+                    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    new_row = pd.DataFrame([[name, email, phone, serial, now]], columns=df.columns)
                     df = pd.concat([df, new_row], ignore_index=True)
                     df.to_csv(DATA_FILE, index=False)
                     st.success(f"報名成功！您的序號是：{serial}")
                     st.balloons()
+
+                    # -----------------------------
+                    # 產生 QR Code
+                    # -----------------------------
+                    qr_info = f"姓名: {name}\n序號: {serial}\n報名時間: {now}"
+                    qr_img = qrcode.make(qr_info)
+                    st.image(qr_img, caption="您的報名 QR Code", use_column_width=True)
+
+                    # -----------------------------
+                    # 產生 PDF
+                    # -----------------------------
+                    pdf = FPDF()
+                    pdf.add_page()
+                    pdf.set_font("Arial", size=12)
+                    pdf.cell(0, 10, "3490第36屆年會報名資料", ln=1, align="C")
+                    pdf.ln(10)
+                    pdf.cell(0, 10, f"姓名: {name}", ln=1)
+                    pdf.cell(0, 10, f"Email: {email}", ln=1)
+                    pdf.cell(0, 10, f"電話: {phone}", ln=1)
+                    pdf.cell(0, 10, f"序號: {serial}", ln=1)
+                    pdf.cell(0, 10, f"報名時間: {now}", ln=1)
+
+                    pdf_buffer = io.BytesIO()
+                    pdf.output(pdf_buffer)
+                    pdf_buffer.seek(0)
+
+                    st.download_button(
+                        "下載 PDF 報名資料",
+                        pdf_buffer,
+                        f"{name}_signup.pdf",
+                        "application/pdf"
+                    )
 
 # -----------------------------
 # 後台管理頁
@@ -83,13 +131,11 @@ elif page == "後台管理":
 
     if pwd == cfg["password"]:
         st.success("登入成功 ✅")
-
-        # 顯示報名資料
         df = pd.read_csv(DATA_FILE)
         st.subheader("報名名單")
         st.dataframe(df)
 
-        # 下載 CSV
+        # 匯出 CSV
         csv = df.to_csv(index=False).encode("utf-8")
         st.download_button("下載報名資料 (CSV)", csv, "signup_data.csv", "text/csv")
 
@@ -104,3 +150,29 @@ elif page == "後台管理":
 
     elif pwd:
         st.error("密碼錯誤 ❌")
+
+# -----------------------------
+# 目前報名清單頁
+# -----------------------------
+elif page == "目前報名清單":
+    st.title("📋 目前報名清單")
+    df = pd.read_csv(DATA_FILE)
+    st.dataframe(df)
+
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button("下載報名資料 (CSV)", csv, "signup_data.csv", "text/csv")
+
+# -----------------------------
+# 查詢報名資料頁
+# -----------------------------
+elif page == "查詢報名資料":
+    st.title("🔎 查詢報名資料")
+    query_email = st.text_input("請輸入您的 Email 查詢")
+    if st.button("查詢"):
+        df = pd.read_csv(DATA_FILE)
+        result = df[df["Email"] == query_email]
+        if not result.empty:
+            st.success("查詢成功！")
+            st.dataframe(result)
+        else:
+            st.warning("查無資料")
