@@ -2,6 +2,40 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
+import requests
+import base64
+
+# -----------------------------
+# GitHub 設定
+# -----------------------------
+GITHUB_OWNER = "你的GitHub帳號"
+GITHUB_REPO = "你的repo名稱"
+GITHUB_FILE_PATH = "signup_data.csv"  # 在 GitHub 上的路徑
+GITHUB_TOKEN = "你的Personal Access Token"
+
+def push_csv_to_github(local_file, commit_message):
+    """將本地 CSV 推到 GitHub"""
+    with open(local_file, "r", encoding="utf-8") as f:
+        content = f.read()
+    url_get = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    # 取得 SHA
+    r = requests.get(url_get, headers=headers)
+    if r.status_code == 200:
+        sha = r.json()["sha"]
+    else:
+        sha = None
+    data = {
+        "message": commit_message,
+        "content": base64.b64encode(content.encode()).decode()
+    }
+    if sha:
+        data["sha"] = sha
+    r = requests.put(url_get, headers=headers, json=data)
+    if r.status_code in [200, 201]:
+        st.success("CSV 已自動更新到 GitHub")
+    else:
+        st.error(f"推送 GitHub 失敗: {r.text}")
 
 # -----------------------------
 # 檔案與初始設定
@@ -9,11 +43,9 @@ from datetime import datetime
 DATA_FILE = "signup_data.csv"
 CONFIG_FILE = "config.txt"
 
-# 初始化 CSV，確保有報名時間欄位
 if not os.path.exists(DATA_FILE):
-    pd.DataFrame(columns=["姓名", "Email", "電話", "序號", "報名時間"]).to_csv(DATA_FILE, index=False)
+    pd.DataFrame(columns=["姓名","Email","電話","序號","報名時間"]).to_csv(DATA_FILE,index=False)
 
-# 初始化設定檔
 if not os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, "w") as f:
         f.write("limit=5\npassword=123456")
@@ -37,9 +69,9 @@ def save_config(limit, password):
 cfg = read_config()
 
 # -----------------------------
-# 側邊欄選單
+# 側邊欄
 # -----------------------------
-page = st.sidebar.selectbox("選擇頁面", ["前台報名", "後台管理", "目前報名清單", "查詢報名資料"])
+page = st.sidebar.selectbox("選擇頁面", ["前台報名","後台管理","目前報名清單","查詢報名資料"])
 
 # -----------------------------
 # 活動資訊
@@ -56,10 +88,8 @@ st.markdown("""
 # -----------------------------
 if page == "前台報名":
     st.title("3490地區扶青社第36屆年會報名系統")
-
     df = pd.read_csv(DATA_FILE)
     count = len(df)
-
     if count >= cfg["limit"]:
         st.warning("報名已額滿！")
     else:
@@ -69,18 +99,19 @@ if page == "前台報名":
             email = st.text_input("Email")
             phone = st.text_input("電話")
             submitted = st.form_submit_button("送出報名")
-
             if submitted:
                 if not name or not email:
                     st.error("請填寫完整資料")
                 else:
-                    serial = f"{count + 1:03d}"
+                    serial = f"{count+1:03d}"
                     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    new_row = pd.DataFrame([[name, email, phone, serial, now]], columns=df.columns)
-                    df = pd.concat([df, new_row], ignore_index=True)
-                    df.to_csv(DATA_FILE, index=False)
+                    new_row = pd.DataFrame([[name,email,phone,serial,now]],columns=df.columns)
+                    df = pd.concat([df,new_row],ignore_index=True)
+                    df.to_csv(DATA_FILE,index=False)
                     st.success(f"報名成功！您的序號是：{serial}")
                     st.balloons()
+                    # 自動推到 GitHub
+                    push_csv_to_github(DATA_FILE, f"新增報名: {name} 序號 {serial}")
 
 # -----------------------------
 # 後台管理
@@ -93,15 +124,13 @@ elif page == "後台管理":
         df = pd.read_csv(DATA_FILE)
         st.subheader("報名名單")
         st.dataframe(df)
-
         csv = df.to_csv(index=False).encode("utf-8")
         st.download_button("下載報名資料 (CSV)", csv, "signup_data.csv", "text/csv")
-
         st.subheader("設定報名限制與後台密碼")
-        new_limit = st.number_input("報名上限", value=cfg["limit"], min_value=1, max_value=999)
+        new_limit = st.number_input("報名上限", value=cfg["limit"], min_value=1,max_value=999)
         new_pwd = st.text_input("修改後台密碼（可留空不改）")
         if st.button("儲存設定"):
-            save_config(new_limit, new_pwd if new_pwd else cfg["password"])
+            save_config(new_limit,new_pwd if new_pwd else cfg["password"])
             st.success("設定已更新！請重新整理生效。")
     elif pwd:
         st.error("密碼錯誤 ❌")
@@ -112,10 +141,7 @@ elif page == "後台管理":
 elif page == "目前報名清單":
     st.title("📋 目前報名清單")
     df = pd.read_csv(DATA_FILE)
-
-    # 確保報名時間欄位存在
-    if "報名時間" in df.columns:
-        df["報名時間"] = pd.to_datetime(df["報名時間"])
+    df["報名時間"] = pd.to_datetime(df["報名時間"])
     st.dataframe(df)
 
 # -----------------------------
@@ -126,7 +152,7 @@ elif page == "查詢報名資料":
     query_email = st.text_input("請輸入您的 Email 查詢")
     if st.button("查詢"):
         df = pd.read_csv(DATA_FILE)
-        result = df[df["Email"] == query_email]
+        result = df[df["Email"]==query_email]
         if not result.empty:
             st.success("查詢成功！")
             st.dataframe(result)
