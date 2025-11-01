@@ -155,9 +155,7 @@ elif page == "後台管理":
 elif page == "目前報名清單":
     st.title("📋 目前報名清單")
     df = pd.read_csv(DATA_FILE)
-    st.dataframe(df)
-    csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button("下載報名資料 (CSV)", csv, "signup_data.csv", "text/csv")
+    st.dataframe(df)  
 
 # -----------------------------
 # 查詢報名資料
