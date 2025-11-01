@@ -157,9 +157,7 @@ elif page == "目前報名清單":
     df = pd.read_csv(DATA_FILE)
     # 依序號排序
     df = df.sort_values(by="序號")
-    # 將報名時間格式化（如果需要）
-    df["報名時間"] = pd.to_datetime(df["報名時間"])
-    st.dataframe(df)
+
 
 # -----------------------------
 # 查詢報名資料
