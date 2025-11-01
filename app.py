@@ -47,7 +47,7 @@ page = st.sidebar.selectbox("選擇頁面", ["前台報名", "後台管理"])
 # 前台報名頁
 # -----------------------------
 if page == "前台報名":
-    st.title("3490第36屆年會報名系統")
+    st.title("3490地區第36屆年會報名系統")
 
     df = pd.read_csv(DATA_FILE)
     count = len(df)
