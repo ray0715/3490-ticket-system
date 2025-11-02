@@ -94,7 +94,7 @@ with st.form("signup_form"):
             df.to_csv(DATA_FILE, index=False, encoding="utf-8-sig")
 
             # 推送到 GitHub
-            push_csv_to_github(DATA_FILE, name, serial)
+           # push_csv_to_github(DATA_FILE, name, serial)
 
             st.success(f"報名成功！您的序號是：{serial}")
             st.balloons()
