@@ -9,7 +9,7 @@ import requests
 
 # === 設定基本參數 ===
 DATA_FILE = "signup_data.csv"
-REPO = "ray0715/3490-ticket-system"  # ⚠️請改成你的 GitHub repo，例如 "JT-engineer/3490-ticket-system"
+REPO = "ray0715/3490-ticket-system"  # ⚠️改成你的 GitHub repo，例如 "JT-engineer/3490-ticket-system"
 BRANCH = "main"
 
 # === 初始化 CSV ===
@@ -19,10 +19,9 @@ if not os.path.exists(DATA_FILE):
 
 # === 推送 CSV 到 GitHub ===
 def push_csv_to_github(file_path, name, serial):
-    token = st.secrets["GITHUB_TOKEN"]  # ⚠️記得在 Streamlit secrets 加入 GITHUB_TOKEN
+    token = st.secrets["GITHUB_TOKEN"]  # ⚠️需先在 Streamlit Secrets 加入 GITHUB_TOKEN
     file_name = os.path.basename(file_path)
 
-    # 讀取檔案並轉成 base64
     with open(file_path, "rb") as f:
         content_base64 = base64.b64encode(f.read()).decode("utf-8")
 
@@ -30,16 +29,16 @@ def push_csv_to_github(file_path, name, serial):
     headers = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "streamlit-app"  # 💡一定要是純英文
     }
 
-    # 取得檔案的 SHA（若存在）
+    # 嘗試取得檔案 SHA
     r = requests.get(url_get, headers=headers)
-    sha = r.json().get("sha", None) if r.status_code == 200 else None
+    sha = r.json().get("sha") if r.status_code == 200 else None
 
-    # commit 訊息支援中文
-    commit_message = f"新增報名資料 - {name} (序號 {serial})"
+    # 🔒 改為英文 commit message，避免 UnicodeEncodeError
+    commit_message = f"update_{serial}"
 
-    url_put = f"https://api.github.com/repos/{REPO}/contents/{file_name}"
     payload = {
         "message": commit_message,
         "content": content_base64,
@@ -48,7 +47,7 @@ def push_csv_to_github(file_path, name, serial):
     if sha:
         payload["sha"] = sha
 
-    # 🔒 UTF-8 傳輸，避免 UnicodeEncodeError
+    url_put = f"https://api.github.com/repos/{REPO}/contents/{file_name}"
     r = requests.put(
         url_put,
         headers=headers,
@@ -56,15 +55,15 @@ def push_csv_to_github(file_path, name, serial):
     )
 
     if r.status_code in [200, 201]:
-        print("✅ CSV 已成功推送到 GitHub")
+        st.success("✅ CSV 已成功推送到 GitHub！")
     else:
-        print("❌ 推送失敗:", r.status_code, r.text)
+        st.error(f"❌ 推送失敗 ({r.status_code})：{r.text}")
 
 # === Streamlit 主介面 ===
 st.set_page_config(page_title="3490地區年會報名系統", layout="centered")
 
 st.title("🧾 3490地區年會報名系統")
-st.write("請填寫以下資料完成報名。")
+st.markdown("請填寫以下資料完成報名。")
 
 # === 表單輸入 ===
 with st.form("signup_form"):
@@ -90,8 +89,11 @@ with st.form("signup_form"):
             df = pd.concat([df, new_row], ignore_index=True)
             df.to_csv(DATA_FILE, index=False, encoding="utf-8-sig")
 
-            # 推送到 GitHub
-            push_csv_to_github(DATA_FILE, name, serial)
+            # 推送 GitHub
+            try:
+                push_csv_to_github(DATA_FILE, name, serial)
+            except Exception as e:
+                st.warning(f"⚠️ 資料已存入，但推送 GitHub 失敗：{e}")
 
             st.success(f"報名成功！您的序號是：{serial}")
             st.balloons()
