@@ -99,7 +99,7 @@ else:
         st.info("資料上傳中...")
 
     elif st.session_state.current_page == 'page3':
-        st.subheader("🧩 記憶拼圖分組名單")
+        st.subheader("🧩 記憶拼圖分組名單D")
         st.text_input("輸入姓名查詢")
         # 這裡未來可以放查詢結果表
 
