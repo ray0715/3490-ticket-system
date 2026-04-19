@@ -1,117 +1,225 @@
 import streamlit as st
+import base64
 
 # 1. 網頁配置
 st.set_page_config(page_title="3490地區年會", layout="wide")
 
-# 2. 強制 2 欄併排的 CSS 樣式
-st.markdown("""
-    <style>
-    /* 隱藏原生按鈕，只保留我們自定義的樣式 */
-    .main-container {
-        width: 100%;
-        max-width: 500px;
-        margin: auto;
-    }
-    .custom-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 8px; /* 按鈕之間的間距 */
-    }
-    .custom-table td {
-        width: 50%;
-    }
-    .nav-button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #ffffff;
-        border: 2px solid #004d99;
-        border-radius: 12px;
-        height: 85px;
-        color: #004d99;
-        font-weight: bold;
-        text-decoration: none;
-        font-size: 16px;
-        box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
-        text-align: center;
-        line-height: 1.2;
-    }
-    .nav-button:active {
-        background-color: #004d99;
-        color: white;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# --- 背景圖處理函數 ---
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
 
-# 3. 頁面狀態管理
+def set_png_as_page_bg(bin_file):
+    bin_str = get_base64_of_bin_file(bin_file)
+    page_bg_img = f'''
+    <style>
+    .stApp {{
+        background-image: url("data:image/jpg;base64,{bin_str}");
+        background-size: cover;
+        background-attachment: fixed;
+    }}
+    /* 設定內容區塊背景稍微透明，確保文字清晰 */
+    .main-block {{
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 20px;
+        border-radius: 15px;
+    }}
+    /* 強制按鈕併排樣式 */
+    div.stButton > button {{
+        width: 100%;
+        height: 90px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 12px;
+        background-color: rgba(255, 255, 255, 0.9);
+        color: #004d99;
+        border: 2px solid #004d99;
+    }}
+    </style>
+    '''
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# 執行背景設定 (請確保檔名正確)
+try:
+    set_png_as_page_bg('BG.JPG')
+except:
+    st.warning("找不到背景圖 BG.JPG，請檢查檔名是否正確。")
+
+# 2. 頁面狀態管理
 if 'page' not in st.session_state:
     st.session_state.page = 'home'
 
-# --- 處理點擊事件 ---
-# 因為 HTML 按鈕無法直接觸發 Python，我們用 Streamlit 原生 button 放在裡面
-# 但為了強制併排，我們使用極簡化的 columns 並限制寬度
+# --- 主程式邏輯 ---
 
-# A. 主選單頁面
+# A. 主選單 (強制併排版)
 if st.session_state.page == 'home':
-    st.markdown("<h2 style='text-align: center;'>🧩 第 36 屆地區年會</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>時光迴響，記憶約定</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #004d99;'>🧩 第 36 屆地區年會</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #555;'>時光迴響，記憶約定</p>", unsafe_allow_html=True)
 
-    # 這是核心技巧：使用對齊容器
-    st.write("---")
-    
-    # 這裡我們用 Python 手動計算 2 欄，並用兩兩一組的方式強制呈現
-    # 為了防止跳行，我們將每一個 row 都寫死在同一個容器裡
-    
+    # 使用兩欄佈局，並透過 use_container_width 強制填滿
     col1, col2 = st.columns(2, gap="small")
     
     with col1:
-        if st.button("📅 年會流程", key="b1", use_container_width=True):
-            st.session_state.page = 'page1'
+        if st.button("📅 年會流程", key="n1", use_container_width=True):
+            st.session_state.page = 'p1'
             st.rerun()
-        if st.button("🧩 分組名單", key="b3", use_container_width=True):
-            st.session_state.page = 'page3'
+        if st.button("🧩 分組名單", key="n3", use_container_width=True):
+            st.session_state.page = 'p3'
             st.rerun()
-        if st.button("🏆 得獎名單", key="b5", use_container_width=True):
-            st.session_state.page = 'page5'
+        if st.button("🏆 得獎名單", key="n5", use_container_width=True):
+            st.session_state.page = 'p5'
             st.rerun()
             
     with col2:
-        if st.button("📂 社務資料", key="b2", use_container_width=True):
-            st.session_state.page = 'page2'
+        if st.button("📂 社務資料", key="n2", use_container_width=True):
+            st.session_state.page = 'p2'
             st.rerun()
-        if st.button("🍽️ 晚會桌次", key="b4", use_container_width=True):
-            st.session_state.page = 'page4'
+        if st.button("🍽️ 晚會桌次", key="n4", use_container_width=True):
+            st.session_state.page = 'p4'
             st.rerun()
-        if st.button("🤝 贊助商資料", key="b6", use_container_width=True):
-            st.session_state.page = 'page6'
+        if st.button("🤝 贊助商資料", key="n6", use_container_width=True):
+            st.session_state.page = 'p6'
             st.rerun()
 
-# B. 子頁面內容 (iframe 效果)
+# B. 子頁面 (點擊後直接覆蓋，不需下滑)
 else:
-    # 頂部固定返回按鈕
+    # 頂部返回按鈕
     if st.button("⬅️ 返回主選單", use_container_width=True):
         st.session_state.page = 'home'
         st.rerun()
+    
+    # 使用容器包裝內容，增加易讀性
+    with st.container():
+        st.markdown('<div class="main-block">', unsafe_allow_html=True)
         
-    st.divider()
+        if st.session_state.page == 'p1':
+            st.header("📅 年會流程")
+            st.write("09:00 - 報到")
+            st.write("10:00 - 開幕典禮")
+        elif st.session_state.page == 'p2':
+            st.header("📂 社務資料")
+        elif st.session_state.page == 'p3':
+            st.header("🧩 分組名單")
+        elif st.session_state.page == 'p4':
+            st.header("🍽️ 晚會桌次表")
+        elif st.session_state.page == 'p5':
+            st.header("🏆 晚會得獎名單")
+        elif st.session_state.page == 'p6':
+            st.header("🤝 贊助商資料")
+            
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    # 內容根據頁面切換
-    if st.session_state.page == 'page1':
-        st.subheader("📅 年會流程")
-        st.write("這裡是詳細流程...")
-    elif st.session_state.page == 'page2':
-        st.subheader("📂 社務資料")
-    elif st.session_state.page == 'page3':
-        st.subheader("🧩 分組名單")
-        st.text_input("搜尋姓名")
-    elif st.session_state.page == 'page4':
-        st.subheader("🍽️ 晚會桌次表")
-    elif st.session_state.page == 'page5':
-        st.subheader("🏆 得獎名單")
-    elif st.session_state.page == 'page6':
-        st.subheader("🤝 贊助商資料")
+    st.button("⬅️ 返回主選單 ", key="back_bot", use_container_width=True)import streamlit as st
+import base64
 
-    st.divider()
-    if st.button("⬅️ 返回主選單 ", key="bottom_back"):
+# 1. 網頁配置
+st.set_page_config(page_title="3490地區年會", layout="wide")
+
+# --- 背景圖處理函數 ---
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def set_png_as_page_bg(bin_file):
+    bin_str = get_base64_of_bin_file(bin_file)
+    page_bg_img = f'''
+    <style>
+    .stApp {{
+        background-image: url("data:image/jpg;base64,{bin_str}");
+        background-size: cover;
+        background-attachment: fixed;
+    }}
+    /* 設定內容區塊背景稍微透明，確保文字清晰 */
+    .main-block {{
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 20px;
+        border-radius: 15px;
+    }}
+    /* 強制按鈕併排樣式 */
+    div.stButton > button {{
+        width: 100%;
+        height: 90px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 12px;
+        background-color: rgba(255, 255, 255, 0.9);
+        color: #004d99;
+        border: 2px solid #004d99;
+    }}
+    </style>
+    '''
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# 執行背景設定 (請確保檔名正確)
+try:
+    set_png_as_page_bg('BG.JPG')
+except:
+    st.warning("找不到背景圖 BG.JPG，請檢查檔名是否正確。")
+
+# 2. 頁面狀態管理
+if 'page' not in st.session_state:
+    st.session_state.page = 'home'
+
+# --- 主程式邏輯 ---
+
+# A. 主選單 (強制併排版)
+if st.session_state.page == 'home':
+    st.markdown("<h2 style='text-align: center; color: #004d99;'>🧩 第 36 屆地區年會</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #555;'>時光迴響，記憶約定</p>", unsafe_allow_html=True)
+
+    # 使用兩欄佈局，並透過 use_container_width 強制填滿
+    col1, col2 = st.columns(2, gap="small")
+    
+    with col1:
+        if st.button("📅 年會流程", key="n1", use_container_width=True):
+            st.session_state.page = 'p1'
+            st.rerun()
+        if st.button("🧩 分組名單", key="n3", use_container_width=True):
+            st.session_state.page = 'p3'
+            st.rerun()
+        if st.button("🏆 得獎名單", key="n5", use_container_width=True):
+            st.session_state.page = 'p5'
+            st.rerun()
+            
+    with col2:
+        if st.button("📂 社務資料", key="n2", use_container_width=True):
+            st.session_state.page = 'p2'
+            st.rerun()
+        if st.button("🍽️ 晚會桌次", key="n4", use_container_width=True):
+            st.session_state.page = 'p4'
+            st.rerun()
+        if st.button("🤝 贊助商資料", key="n6", use_container_width=True):
+            st.session_state.page = 'p6'
+            st.rerun()
+
+# B. 子頁面 (點擊後直接覆蓋，不需下滑)
+else:
+    # 頂部返回按鈕
+    if st.button("⬅️ 返回主選單", use_container_width=True):
         st.session_state.page = 'home'
         st.rerun()
+    
+    # 使用容器包裝內容，增加易讀性
+    with st.container():
+        st.markdown('<div class="main-block">', unsafe_allow_html=True)
+        
+        if st.session_state.page == 'p1':
+            st.header("📅 年會流程")
+            st.write("09:00 - 報到")
+            st.write("10:00 - 開幕典禮")
+        elif st.session_state.page == 'p2':
+            st.header("📂 社務資料")
+        elif st.session_state.page == 'p3':
+            st.header("🧩 分組名單")
+        elif st.session_state.page == 'p4':
+            st.header("🍽️ 晚會桌次表")
+        elif st.session_state.page == 'p5':
+            st.header("🏆 晚會得獎名單")
+        elif st.session_state.page == 'p6':
+            st.header("🤝 贊助商資料")
+            
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.button("⬅️ 返回主選單 ", key="back_bot", use_container_width=True)
