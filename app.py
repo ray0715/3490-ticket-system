@@ -19,7 +19,7 @@ def get_base64(file_path):
     except:
         return None
 
-# --- 設定網頁整體樣式 (模仿 PyCon 質感與背景) ---
+# --- 設定網頁整體樣式 ---
 def set_design(bg_file):
     bg_base64 = get_base64(bg_file)
     bg_style = f'background-image: url("data:image/jpg;base64,{bg_base64}");' if bg_base64 else ""
@@ -34,50 +34,55 @@ def set_design(bg_file):
         }}
         /* 內容區塊半透明卡片 */
         .content-card {{
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 25px;
+            background-color: rgba(255, 255, 255, 0.92);
+            padding: 20px;
             border-radius: 15px;
             color: #1f1f1f;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }}
-        /* 讓 Tabs 標籤看起來更有質感 */
-        .stTabs [data-baseweb="tab-list"] {{
-            gap: 10px;
-        }}
+        /* PyCon 風格 Tabs 調整 */
+        .stTabs [data-baseweb="tab-list"] {{ gap: 8px; }}
         .stTabs [data-baseweb="tab"] {{
-            height: 50px;
-            background-color: rgba(255, 255, 255, 0.5);
+            height: 45px;
+            background-color: rgba(255, 255, 255, 0.6);
             border-radius: 10px 10px 0px 0px;
-            padding: 0px 20px;
+            padding: 0px 15px;
             font-weight: bold;
+            color: #555;
         }}
         .stTabs [aria-selected="true"] {{
             background-color: #004d99 !important;
             color: white !important;
         }}
-        /* 手機版 2 欄按鈕樣式 */
+        /* 兩欄式大按鈕樣式 */
         div.stButton > button {{
             width: 100%;
-            height: 95px;
+            height: 100px;
             font-size: 18px;
             font-weight: bold;
             border-radius: 15px;
             background-color: rgba(255, 255, 255, 0.95);
             color: #004d99;
-            border: 2px solid #004d99;
-            margin-bottom: 8px;
-            white-space: pre-wrap;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.4;
         }}
         div.stButton > button:active, div.stButton > button:hover {{
-            background-color: #004d99 !important;
-            color: white !important;
+            border: 1px solid #004d99;
+            background-color: #f0f7ff;
         }}
         #MainMenu {{visibility: hidden;}}
         footer {{visibility: hidden;}}
         </style>
         """, unsafe_allow_html=True)
 
-# 執行樣式設定
+# 執行設計
 set_design('BG.JPG')
 
 # 2. 頁面狀態管理
@@ -86,92 +91,103 @@ if 'page' not in st.session_state:
 
 # --- 主程式邏輯 ---
 
-# A. 主選單頁面
+# A. 主選單頁面 (Home)
 if st.session_state.page == 'home':
-    # 顯示淨化後的標題圖
+    # 顯示主視覺標題圖
     title_img = get_base64("image_44758d.png")
     if title_img:
         st.markdown(
-            f"""
-            <div style="text-align: center;">
-                <img src="data:image/png;base64,{title_img}" 
-                     style="max-width: 80%; height: auto; margin: 10px auto 30px auto; display: block;">
-            </div>
-            """, unsafe_allow_html=True
+            f'<div style="text-align: center;"><img src="data:image/png;base64,{title_img}" style="max-width: 85%; height: auto; margin-bottom: 20px;"></div>',
+            unsafe_allow_html=True
         )
-    else:
-        st.markdown("<h2 style='text-align: center; color: #004d99;'>第 36 屆地區年會</h2>", unsafe_allow_html=True)
-
+    
+    # 建立 2 欄位按鈕 (仿照你的排版需求)
     col1, col2 = st.columns(2, gap="small")
     
     with col1:
-        if st.button("📅\n年會流程", key="b1", use_container_width=True):
+        if st.button("📅\n年會流程", key="m1"):
             st.session_state.page = 'schedule'
             st.rerun()
-        if st.button("🧩\n分組名單", key="b3", use_container_width=True):
+        if st.button("🧩\n記憶拼圖\n分組名單", key="m3"):
             st.session_state.page = 'group'
             st.rerun()
-        if st.button("🏆\n得獎名單", key="b5", use_container_width=True):
+        if st.button("🏆\n晚會\n得獎名單", key="m5"):
             st.session_state.page = 'awards'
             st.rerun()
             
     with col2:
-        if st.button("📂\n社務資料", key="b2", use_container_width=True):
+        if st.button("📂\n3490扶青社\n社務資料", key="m2"):
             st.session_state.page = 'data'
             st.rerun()
-        if st.button("🍽️\n晚會桌次", key="b4", use_container_width=True):
+        if st.button("🍽️\n晚會桌次表", key="m4"):
             st.session_state.page = 'table'
             st.rerun()
-        if st.button("🤝\n贊助商", key="b6", use_container_width=True):
+        if st.button("🤝\n贊助商資料", key="m6"):
             st.session_state.page = 'sponsor'
             st.rerun()
 
-# B. 子頁面內容
+# B. 子頁面 (內容區)
 else:
-    if st.button("⬅️ 返回主選單", key="back_btn", use_container_width=True):
+    # 頂部單一返回按鈕
+    if st.button("⬅️ 返回主選單", use_container_width=True):
         st.session_state.page = 'home'
         st.rerun()
     
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     
-    # 1. 年會流程 (仿 PyCon 分頁設計)
+    # --- 1. 年會流程 (PyCon 分頁風格) ---
     if st.session_state.page == 'schedule':
-        st.subheader("📅 典禮議程")
+        st.subheader("典禮議程")
+        t1, t2 = st.tabs(["05月02日 (六)", "05月03日 (日)"])
         
-        # 使用 Tabs 區分第一天與第二天
-        tab1, tab2 = st.tabs(["5月2日 (Sat)", "5月3日 (Sun)"])
-        
-        with tab1:
-            st.markdown("### **Day 1: 時光迴響**")
-            df1 = pd.DataFrame({
-                "時間": ["13:00-13:30", "13:30-14:00", "14:00-17:00", "17:00-17:30", "17:30-19:00", "19:00-21:00", "21:00-22:30"],
-                "項目": ["行李寄放 & 註冊聯誼", "歡迎扶輪長輩及 D2700", "記憶拼圖活動 (地區服)", "Check in", "晚宴 (復古風)", "DISCO大舞廳", "聯誼會後會"],
-                "地點": ["C棟1/2樓", "C棟2樓國際廳", "C棟2樓國際廳", "-", "A棟3樓富貴廳", "C棟1樓金龍廳", "C棟1樓金龍廳"]
-            })
-            st.dataframe(df1, use_container_width=True, hide_index=True)
-        
-        with tab2:
-            st.markdown("### **Day 2: 記憶約定**")
-            df2 = pd.DataFrame({
-                "時間": ["09:00-09:30", "09:30-12:30", "12:30-"],
-                "項目": ["註冊聯誼 + 退房", "第三十六屆年會典禮 (正式)", "歡送 D2700 地區 & 場復"],
-                "地點": ["B棟1樓西餐廳", "C棟2樓國際廳", "-"]
-            })
-            st.dataframe(df2, use_container_width=True, hide_index=True)
+        with t1:
+            st.info("💡 當日服裝：地區服 / 晚宴：復古服裝")
+            df1 = pd.DataFrame([
+                ["13:00 - 13:30", "行李寄放 & 註冊聯誼", "C棟1樓金鳳廳/2樓國際廳"],
+                ["13:30 - 14:00", "歡迎扶輪長輩及 D2700", "C棟2樓國際廳"],
+                ["14:00 - 17:00", "記憶拼圖活動", "C棟2樓國際廳"],
+                ["17:00 - 17:30", "Check in", "-"],
+                ["17:30 - 19:00", "晚宴", "A棟3樓富貴廳"],
+                ["19:00 - 21:00", "DISCO大舞廳", "C棟1樓金龍廳"],
+                ["21:00 - 22:30", "聯誼會後會", "C棟1樓金龍廳"]
+            ], columns=["時間", "流程內容", "地點"])
+            st.table(df1)
+            
+        with t2:
+            st.info("💡 當日服裝：正式服裝")
+            df2 = pd.DataFrame([
+                ["09:00 - 09:30", "註冊聯誼 + 退房", "早餐:B棟1樓波根第"],
+                ["09:30 - 12:30", "第三十六屆年會典禮", "C棟2樓國際廳"],
+                ["12:30 - ", "歡送 D2700 地區 & 場復", "-"]
+            ], columns=["時間", "流程內容", "地點"])
+            st.table(df2)
 
-    # 2~6 子頁面 (省略其餘邏輯，保持跟之前一樣)
+    # --- 2. 社務資料 ---
     elif st.session_state.page == 'data':
         st.subheader("📂 3490 扶青社社務資料")
-        st.info("資料整理中。")
+        st.write("資料上傳中...")
+
+    # --- 3. 分組名單 ---
     elif st.session_state.page == 'group':
-        st.subheader("🧩 記憶拼圖分組查詢")
-        name = st.text_input("搜尋姓名：")
+        st.subheader("🧩 記憶拼圖分組名單")
+        st.write("請輸入您的姓名進行查詢")
+        search = st.text_input("姓名：")
+        if search: st.success(f"正在為您查詢「{search}」的分組...")
+
+    # --- 4. 晚會桌次 ---
     elif st.session_state.page == 'table':
-        st.subheader("🍽️ 晚會桌次")
+        st.subheader("🍽️ 晚會桌次表")
+        st.write("請對應您的社別入座。")
+
+    # --- 5. 得獎名單 ---
     elif st.session_state.page == 'awards':
         st.subheader("🏆 晚會得獎名單")
         st.balloons()
+        st.write("恭喜所有得獎社青！")
+
+    # --- 6. 贊助商 ---
     elif st.session_state.page == 'sponsor':
         st.subheader("🤝 贊助商資料")
+        st.write("特別感謝以下贊助夥伴...")
 
     st.markdown('</div>', unsafe_allow_html=True)
