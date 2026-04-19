@@ -45,7 +45,7 @@ def go_back():
 
 # A. 主選單頁面 (使用表格邏輯強制併排)
 if st.session_state.current_page == 'home':
-    st.markdown("<h2 style='text-align: center;'>🧩 第 36 屆地區年會</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>🧩 第 36 屆地區年會DDD</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center;'>時光迴響，記憶約定</p>", unsafe_allow_html=True)
 
     # 這裡我們用 Streamlit 的 columns 但控制在非常窄的範圍內，
@@ -99,7 +99,7 @@ else:
         st.info("資料上傳中...")
 
     elif st.session_state.current_page == 'page3':
-        st.subheader("🧩 記憶拼圖分組名單D")
+        st.subheader("🧩 記憶拼圖分組名單")
         st.text_input("輸入姓名查詢")
         # 這裡未來可以放查詢結果表
 
