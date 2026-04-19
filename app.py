@@ -1,119 +1,105 @@
 import streamlit as st
 
 # 1. 網頁配置
-st.set_page_config(page_title="3490地區年會資訊站", layout="wide")
+st.set_page_config(page_title="3490地區年會DS", layout="wide")
 
-# 2. 強制排版與按鈕美化的 CSS
+# 2. 強制 2 欄排版的 CSS
 st.markdown("""
     <style>
-    /* 隱藏預設的按鈕邊框，讓自定義按鈕更美觀 */
-    .stButton > button {
-        width: 100%;
-        height: 100px;
-        border-radius: 10px;
-        background-color: #f0f2f6;
-        color: #004d99;
-        font-weight: bold;
-        font-size: 18px;
+    /* 建立自定義矩陣按鈕樣式 */
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* 強制每列 2 個 */
+        gap: 10px;
+        padding: 10px;
+    }
+    .grid-item {
+        background-color: #f8f9fa;
         border: 2px solid #004d99;
+        border-radius: 15px;
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        text-decoration: none;
+        color: #004d99;
+        font-size: 18px;
+        font-weight: bold;
+        transition: 0.3s;
     }
-    .stButton > button:hover {
-        background-color: #004d99 !important;
-        color: white !important;
-    }
-    /* 移除表格預設間距，確保併排美觀 */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    td {
-        width: 50%;
-        padding: 5px;
+    .grid-item:active {
+        background-color: #004d99;
+        color: white;
+        transform: scale(0.95);
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. 初始化頁面狀態
-if 'current_page' not in st.session_state:
-    st.session_state.current_page = 'home'
-
-# --- 返回主選單函數 ---
-def go_back():
-    st.session_state.current_page = 'home'
+# 3. 頁面狀態管理
+if 'page' not in st.session_state:
+    st.session_state.page = 'home'
 
 # --- 主程式邏輯 ---
 
-# A. 主選單頁面 (使用表格邏輯強制併排)
-if st.session_state.current_page == 'home':
-    st.markdown("<h2 style='text-align: center;'>🧩 第 36 屆地區年會DDD</h2>", unsafe_allow_html=True)
+# A. 主選單 (強制 2x3 佈局)
+if st.session_state.page == 'home':
+    st.markdown("<h2 style='text-align: center;'>🧩 第 36 屆地區年會</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center;'>時光迴響，記憶約定</p>", unsafe_allow_html=True)
 
-    # 這裡我們用 Streamlit 的 columns 但控制在非常窄的範圍內，
-    # 或者直接使用 Button。在移動端強制 2x3 的最好方式是連續的 columns 呼叫：
+    # 使用 HTML 建立按鈕矩陣
+    # 注意：這裡我們使用 st.button 的原生行為，但包在一個寬度受限的容器裡
     
-    # 第一排
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("📅\n年會流程"):
-            st.session_state.current_page = 'page1'
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("📅\n年會流程", key="btn1"):
+            st.session_state.page = 'page1'
             st.rerun()
-    with c2:
-        if st.button("📂\n社務資料"):
-            st.session_state.current_page = 'page2'
+        if st.button("🧩\n分組名單", key="btn3"):
+            st.session_state.page = 'page3'
             st.rerun()
-
-    # 第二排
-    c3, c4 = st.columns(2)
-    with c3:
-        if st.button("🧩\n分組名單"):
-            st.session_state.current_page = 'page3'
+        if st.button("🏆\n得獎名單", key="btn5"):
+            st.session_state.page = 'page5'
             st.rerun()
-    with c4:
-        if st.button("🍽️\n晚會桌次"):
-            st.session_state.current_page = 'page4'
+            
+    with col2:
+        if st.button("📂\n社務資料", key="btn2"):
+            st.session_state.page = 'page2'
             st.rerun()
-
-    # 第三排
-    c5, c6 = st.columns(2)
-    with c5:
-        if st.button("🏆\n得獎名單"):
-            st.session_state.current_page = 'page5'
+        if st.button("🍽️\n晚會桌次", key="btn4"):
+            st.session_state.page = 'page4'
             st.rerun()
-    with c6:
-        if st.button("🤝\n贊助商"):
-            st.session_state.current_page = 'page6'
+        if st.button("🤝\n贊助商", key="btn6"):
+            st.session_state.page = 'page6'
             st.rerun()
 
-# B. 各個子頁面內容 (進入 iframe 模式)
+# B. 子頁面內容 (iframe 模式，有返回鍵)
 else:
-    # 頂部固定返回按鈕
-    st.button("⬅️ 返回主選單", on_click=go_back)
-    st.divider()
-
-    if st.session_state.current_page == 'page1':
-        st.subheader("📅 年會詳細流程")
-        st.write("這裡是詳細的時間表內容...")
+    if st.button("⬅️ 返回主選單"):
+        st.session_state.page = 'home'
+        st.rerun()
         
-    elif st.session_state.current_page == 'page2':
-        st.subheader("📂 3490 扶青社社務資料")
-        st.info("資料上傳中...")
+    st.divider()
 
-    elif st.session_state.current_page == 'page3':
-        st.subheader("🧩 記憶拼圖分組名單")
-        st.text_input("輸入姓名查詢")
-        # 這裡未來可以放查詢結果表
+    pages = {
+        'page1': ("📅 年會流程", "流程內容加載中..."),
+        'page2': ("📂 社務資料", "3490 地區資料庫..."),
+        'page3': ("🧩 分組名單", "請輸入姓名查詢..."),
+        'page4': ("🍽️ 晚會桌次", "晚會桌次圖表..."),
+        'page5': ("🏆 得獎名單", "恭喜獲獎社友！"),
+        'page6': ("🤝 贊助商", "感謝贊助商支持...")
+    }
+    
+    title, content = pages[st.session_state.page]
+    st.header(title)
+    st.write(content)
 
-    elif st.session_state.current_page == 'page4':
-        st.subheader("🍽️ 晚會桌次表")
-        st.write("請對號入座")
-
-    elif st.session_state.current_page == 'page5':
-        st.subheader("🏆 晚會得獎名單")
-        st.balloons()
-
-    elif st.session_state.current_page == 'page6':
-        st.subheader("🤝 贊助商資料")
-        st.write("感謝您的支持")
+    # 如果是分組名單，可以多加一個搜尋框
+    if st.session_state.page == 'page3':
+        st.text_input("快速搜尋")
 
     st.divider()
-    st.button("⬅️ 返回主選單 ", key="bottom_back", on_click=go_back)
+    if st.button("⬅️ 返回主選單 ", key="back_bottom"):
+        st.session_state.page = 'home'
+        st.rerun()
