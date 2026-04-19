@@ -76,9 +76,35 @@ def go_home():
 # --- 主程式邏輯 ---
 
 # A. 主選單頁面 (強制 2 欄併排)
-if st.session_state.page == 'home':
-    st.markdown("<h2 style='text-align: center; color: #004d99; text-shadow: 1px 1px 2px white;'>🧩 第 36 屆地區年會</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #333; font-weight: bold;'>時光迴響，記憶約定</p>", unsafe_allow_html=True)
+# --- 請將這段代碼複製並貼到 app.py 中需要顯示標題的位置 ---
+
+# 淨化版標題圖片的 Base64 編碼数据 (已移除雜圖和數字)
+cleansed_title_b64 = """
+data:image/png;base64,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"
+"""
+
+# 使用 markdown 和 HTML 將圖片水平居中並設定 RWD 寬度
+st.markdown(
+    f"""
+    <div style="text-align: center;">
+        <img src="{cleansed_title_b64}" style="max-width: 100%; height: auto; margin-bottom: 20px;">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
     
     col1, col2 = st.columns(2, gap="small")
     
